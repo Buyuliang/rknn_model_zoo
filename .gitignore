@@ -1,4 +1,3 @@
-*.rknn
 *.pt
 *.torchscript
 *.onnx

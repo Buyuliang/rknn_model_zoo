@@ -79,12 +79,12 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 install(TARGETS ${PROJECT_NAME} DESTINATION .)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/../model/test.jpg DESTINATION model)
-set(file_path ${CMAKE_CURRENT_SOURCE_DIR}/../../PPOCR-Det/model/ppocrv4_det.rknn)
+set(file_path ${CMAKE_CURRENT_SOURCE_DIR}/../../PPOCR-System/model/ppocrv4_det.rknn)
 if (EXISTS ${file_path})
     install(FILES ${file_path} DESTINATION model)
 endif()
 
-set(file_path ${CMAKE_CURRENT_SOURCE_DIR}/../../PPOCR-Rec/model/ppocrv4_rec.rknn)
+set(file_path ${CMAKE_CURRENT_SOURCE_DIR}/../../PPOCR-System/model/ppocrv4_rec.rknn)
 if (EXISTS ${file_path})
     install(FILES ${file_path} DESTINATION model)
 endif()

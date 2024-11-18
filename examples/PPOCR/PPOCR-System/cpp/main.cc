@@ -19,6 +19,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <cstdio>
+#include <fstream>
+#include <iostream>
+#include <sstream>
 
 #include "ppocr_system.h"
 #include "image_utils.h"
@@ -32,6 +36,21 @@
 #define DB_SCORE_MODE "slow"                        // slow or fast. slow for polygon mask; fast for rectangle mask
 #define DB_BOX_TYPE "poly"                                // poly or quad. poly for returning polygon box; quad for returning rectangle box
 #define DB_UNCLIP_RATIO 1.5                          // unclip ratio for poly type
+
+void save_results_to_file(const std::string& filename, const std::string& result_text) {
+    // 打开文件，如果文件不存在则创建，如果文件存在则覆盖
+    std::ofstream outfile(filename, std::ios::out | std::ios::trunc); // std::ios::trunc 确保覆盖文件
+    if (!outfile.is_open()) {
+        std::cerr << "无法打开文件 " << filename << " 来保存结果!" << std::endl;
+        return;
+    }
+
+    // 确保正确写入 UTF-8 字符
+    outfile << result_text;
+
+    // 关闭文件
+    outfile.close();
+}
 
 /*-------------------------------------------
                   Main Function
@@ -80,7 +99,7 @@ int main(int argc, char** argv)
     params.db_box_type = DB_BOX_TYPE;
     params.db_unclip_ratio = DB_UNCLIP_RATIO;
     const unsigned char blue[] = {0, 0, 255};
-
+    std::string result_buffer;
     ret = inference_ppocr_system_model(&rknn_app_ctx, &src_image, &params, &results);
     if (ret != 0) {
         printf("inference_ppocr_system_model fail! ret=%d\n", ret);
@@ -89,8 +108,10 @@ int main(int argc, char** argv)
 
     // Draw Objects
     printf("DRAWING OBJECT\n");
+
     for (int i = 0; i < results.count; i++)
     {
+        std::ostringstream result_line;
         printf("[%d] @ [(%d, %d), (%d, %d), (%d, %d), (%d, %d)]\n", i,
             results.text_result[i].box.left_top.x, results.text_result[i].box.left_top.y, results.text_result[i].box.right_top.x, results.text_result[i].box.right_top.y, 
             results.text_result[i].box.right_bottom.x, results.text_result[i].box.right_bottom.y, results.text_result[i].box.left_bottom.x, results.text_result[i].box.left_bottom.y);
@@ -100,9 +121,14 @@ int main(int argc, char** argv)
         draw_line(&src_image, results.text_result[i].box.right_bottom.x, results.text_result[i].box.right_bottom.y, results.text_result[i].box.left_bottom.x, results.text_result[i].box.left_bottom.y, 255, 2);
         draw_line(&src_image, results.text_result[i].box.left_bottom.x, results.text_result[i].box.left_bottom.y, results.text_result[i].box.left_top.x, results.text_result[i].box.left_top.y, 255, 2);
         printf("regconize result: %s, score=%f\n", results.text_result[i].text.str, results.text_result[i].text.score);
+        // 将每行内容添加到 result_buffer 中
+        result_line << std::string(results.text_result[i].text.str) << "\n";
+        result_buffer += result_line.str();
     }
     printf("    SAVE TO ./out.jpg\n");
     write_image("./out.jpg", &src_image);
+    // 保存识别结果到 text.txt 文件
+    save_results_to_file("text.txt", result_buffer.c_str());
 
 out:
     ret = release_ppocr_model(&rknn_app_ctx.det_context);
